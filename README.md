@@ -1,118 +1,67 @@
-# MEPC 84 Intelligence Dashboard
+# World Classification Map
 
-A D3.js data visualization dashboard for the IMO MEPC 84 meeting submissions and country development classifications.
+A simplified static dashboard that shows a world map colored by each country's `Final Classification`.
 
-**Live URL:** https://fitzroypet.github.io/mepc84-dashboard/
+## What It Does
 
----
+- Displays a single world map view
+- Colors each country by the classification stored in the `Country List` sheet
+- Shows a fixed legend for:
+  - `Developed`
+  - `Developing (Other)`
+  - `LDC only`
+  - `SIDS only`
+  - `SIDS + LDC (Dual Status)`
+  - `Economy in Transition`
+- Falls back to a neutral gray for geography that does not have a matching classification record
 
-## Setup: Connecting Google Sheets (so data stays editable)
+## Data Source
 
-1. **Upload your Excel files to Google Drive**
-   - Go to [drive.google.com](https://drive.google.com)
-   - Drag and drop `MEPC84_Stance_Analysis_v2.xlsx` → Drive auto-converts it to Sheets
-   - Repeat for `UN_IMO_Country_Development_Classification.xlsx`
+The app only needs the country classification workbook:
 
-2. **Make each sheet public**
-   - Open the Google Sheet → Share → "Anyone with the link" → Viewer
+- `data/UN_IMO_Country_Development_Classification.xlsx`
 
-3. **Get the Sheet ID and Tab GIDs**
-   - The Sheet ID is in the URL: `docs.google.com/spreadsheets/d/**[SHEET_ID]**/edit`
-   - Click each tab at the bottom → the URL shows `#gid=**[TAB_GID]**`
+If the country Google Sheet is configured in [`js/config.js`](./js/config.js), the app will try that first and fall back to the local Excel file if loading fails.
 
-4. **Paste the IDs into `js/config.js`**
-   ```
-   mepc84.id → your MEPC84 sheet ID
-   mepc84.tabs.register.gid → GID of the "Register (enriched)" tab
-   mepc84.tabs.crossAgenda.gid → GID of the "Cross-Agenda Profile" tab
-   mepc84.tabs.landscape.gid → GID of the "Originator Landscape" tab
-   countries.id → your Country Classification sheet ID
-   countries.tabs.countryList.gid → GID of the "Country List" tab
-   countries.tabs.imoMembers.gid → GID of the "IMO Members" tab
-   ```
+## Setup Google Sheets
 
-5. Push to GitHub → dashboard auto-refreshes from your live Google Sheets.
+1. Upload `UN_IMO_Country_Development_Classification.xlsx` to Google Drive.
+2. Open it as a Google Sheet.
+3. Share it as `Anyone with the link can view`.
+4. Copy the sheet ID and the `Country List` tab GID into [`js/config.js`](./js/config.js).
 
-> **If Google Sheets is not configured**, the dashboard automatically falls back to the local Excel files in the `data/` folder.
+Only the `countries.id` and `countries.tabs.countryList.gid` values are needed for this map.
 
----
+## Local Assets
 
-## Deploying to GitHub Pages
+The map expects these local assets:
 
-1. Create a new repo at github.com/fitzroypet/mepc84-dashboard
-2. Push this folder:
-   ```bash
-   cd mepc84-dashboard
-   git init
-   git add .
-   git commit -m "Initial dashboard"
-   git remote add origin https://github.com/fitzroypet/mepc84-dashboard.git
-   git push -u origin main
-   ```
-3. In GitHub: **Settings → Pages → Source: Deploy from branch → main / (root)**
-4. Your dashboard is live at `https://fitzroypet.github.io/mepc84-dashboard/`
+- `data/UN_IMO_Country_Development_Classification.xlsx`
+- `data/countries-110m.json`
 
-The GitHub Actions workflow (`.github/workflows/deploy.yml`) also supports auto-deploy on every push.
+The second file is the bundled world geometry used by the choropleth, so the rendered map does not need to fetch country shapes from a runtime CDN.
 
----
+## Deploying To GitHub Pages
 
-## Embedding in your React/Next.js site
+1. Push the `mepc84-dashboard` folder to a GitHub repository.
+2. In GitHub, enable Pages from the branch root.
+3. The static files will serve directly from the repository.
+
+## Embedding
 
 ```jsx
-// In any React component:
-export function MEPCDashboard() {
+export function ClassificationMapEmbed() {
   return (
     <iframe
       src="https://fitzroypet.github.io/mepc84-dashboard/embed.html"
       width="100%"
-      height="800"
+      height="760"
       frameBorder="0"
-      title="MEPC 84 Dashboard"
-      style={{ borderRadius: '8px' }}
+      title="World Classification Map"
+      style={{ borderRadius: '16px' }}
     />
   );
 }
 ```
 
-You can also control the dashboard filters from your React app:
-```js
-const iframe = document.querySelector('iframe');
-// Filter to Agenda Item 7 (GHG)
-iframe.contentWindow.postMessage({ filter: 'agendaItem', value: '7' }, '*');
-// Clear all filters
-iframe.contentWindow.postMessage({ filter: 'agendaItem', value: null }, '*');
-```
-
-Available filter keys: `agendaItem`, `devGroup`, `sentiment`, `stanceMacro`
-
----
-
-## Updating the Originator Map
-
-When your Register data includes new originator names not automatically matched, add them to `data/originator_country_map.json`:
-
-```json
-"New Originator Name": {
-  "type": "Country",
-  "iso3": "XYZ",
-  "finalClassification": "Developing (Other)"
-}
-```
-
-Types: `Country`, `Coalition`, `NGO-Industry`, `NGO-Environment`, `Intergovernmental`, `IMO-Secretariat`
-
----
-
-## Chart Overview
-
-| Chart | What it shows |
-|---|---|
-| Stance Distribution (donut) | Macro-category breakdown of all submissions |
-| Sentiment by Agenda Item (stacked bar) | Favourable / Neutral / Problematic per agenda item |
-| Originator Submissions (bubble) | Each originator sized by total submissions, coloured by dev. status |
-| Agenda Activity Heatmap | Top 20 originators × agenda items |
-| Development Status (donut) | 199 countries by UN/IMO classification |
-| World Map (choropleth) | Countries coloured by development classification |
-| Stance by Dev Group (grouped bar) | % stance alignment broken down by development group |
-
-All charts are cross-linked: clicking any element filters all other charts.
+The embed is the same map-only experience in a tighter layout. The previous filter `postMessage` API has been removed.
