@@ -14,6 +14,7 @@ const CLASSIFICATION_ORDER = [
 ];
 
 const NO_DATA_FILL = '#45505d';
+const FILTERED_FILL = '#283443';
 const NUM_TO_ISO3_OVERRIDES = {
   "31": "AZE",
   "51": "ARM",
@@ -64,8 +65,11 @@ function showCountryTooltip(event, country, fallbackName) {
   showTooltip(event, getTooltipHtml(countryName, classification));
 }
 
-function buildLegend(container, countryList, markerCount) {
+function buildLegend(container, countryList, markerCount, continent) {
   const counts = d3.rollup(countryList, values => values.length, d => d.finalClassification);
+  const filterMessage = continent
+    ? `Showing ${continent}. Countries outside the selected continent are muted. `
+    : '';
 
   const legend = d3.select(container)
     .append('div')
@@ -83,7 +87,7 @@ function buildLegend(container, countryList, markerCount) {
     .append('p')
     .attr('class', 'map-note')
     .text(
-      `Gray land areas do not have a matching workbook classification. `
+      `${filterMessage}Gray land areas do not have a matching workbook classification. `
       + `${markerCount} classified entries are shown as colored dots because polygon geometry is unavailable in this basemap.`
     );
 }
@@ -122,15 +126,20 @@ function buildMarkerCountries(countryList, polygonIso3Set, projection, width) {
   return markerCountries;
 }
 
-export async function renderWorldMap(container, countryList) {
+export async function renderWorldMap(container, countryList, options = {}) {
   const el = document.getElementById(container);
   if (!el) return;
 
   el.innerHTML = '';
 
+  const activeContinent = options.continent || null;
+  const activeCountryList = activeContinent
+    ? countryList.filter(country => country.continent === activeContinent)
+    : countryList;
   const width = Math.max(el.clientWidth || 960, 320);
   const height = Math.max(Math.round(width * 0.56), 360);
   const countryByIso3 = new Map(countryList.map(country => [country.iso3, country]));
+  const activeIso3Set = new Set(activeCountryList.map(country => country.iso3));
 
   let world;
   try {
@@ -146,18 +155,20 @@ export async function renderWorldMap(container, countryList) {
   const path = d3.geoPath().projection(projection);
   const polygonFeatures = countries.features.map(feature => {
     const iso3 = getIso3ForFeature(feature);
+    const country = iso3 ? countryByIso3.get(iso3) : null;
     return {
       feature,
       iso3,
-      country: iso3 ? countryByIso3.get(iso3) : null,
+      country,
+      isActive: country ? activeIso3Set.has(country.iso3) : false,
     };
   });
   const polygonIso3Set = new Set(
     polygonFeatures
-      .filter(item => item.country)
+      .filter(item => item.isActive)
       .map(item => item.country.iso3)
   );
-  const markerCountries = buildMarkerCountries(countryList, polygonIso3Set, projection, width);
+  const markerCountries = buildMarkerCountries(activeCountryList, polygonIso3Set, projection, width);
   const markerRadius = Math.max(4.5, Math.min(width / 190, 7));
 
   const svg = d3.select(el)
@@ -184,9 +195,11 @@ export async function renderWorldMap(container, countryList) {
     .join('path')
     .attr('class', 'country-path')
     .attr('d', d => path(d.feature))
-    .attr('fill', d => {
-      return d.country ? getClassificationColor(d.country.finalClassification) : NO_DATA_FILL;
-    })
+    .attr('fill', d => (
+      d.country
+        ? (d.isActive ? getClassificationColor(d.country.finalClassification) : FILTERED_FILL)
+        : NO_DATA_FILL
+    ))
     .attr('stroke', '#09111b')
     .attr('stroke-width', 0.75)
     .on('mouseover', (event, d) => {
@@ -242,5 +255,5 @@ export async function renderWorldMap(container, countryList) {
     .attr('r', markerRadius)
     .attr('fill', d => getClassificationColor(d.finalClassification));
 
-  buildLegend(el, countryList, markerCountries.length);
+  buildLegend(el, activeCountryList, markerCountries.length, activeContinent);
 }

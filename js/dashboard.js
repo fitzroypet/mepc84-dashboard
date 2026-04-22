@@ -1,13 +1,16 @@
 import { loadCountryClassificationData } from './data/loader.js';
 import { renderWorldMap } from './charts/worldMap.js';
+import { addCountryContinents, getAvailableContinents } from './data/continents.js';
 
 let data = null;
+let selectedContinent = '';
 
 function getUi() {
   return {
     loadingEl: document.getElementById('loading-screen'),
     errorEl: document.getElementById('error-screen'),
     appEl: document.getElementById('app'),
+    continentFilterEl: document.getElementById('continent-filter'),
     errorMessageEl: document.getElementById('error-message')
       || document.querySelector('#error-screen p'),
     retryBtn: document.getElementById('retry-btn'),
@@ -29,7 +32,29 @@ function showError(error) {
 
 async function render() {
   if (!data) return;
-  await renderWorldMap('chart-world-map', data.countryList);
+  await renderWorldMap('chart-world-map', data.countryList, {
+    continent: selectedContinent || null,
+  });
+}
+
+function populateContinentFilter() {
+  const { continentFilterEl } = getUi();
+  if (!continentFilterEl || !data) return;
+
+  const continents = getAvailableContinents(data.countryList);
+  const options = ['<option value="">All continents</option>']
+    .concat(
+      continents.map(continent => {
+        const selected = continent === selectedContinent ? ' selected' : '';
+        return `<option value="${continent}"${selected}>${continent}</option>`;
+      })
+    );
+
+  continentFilterEl.innerHTML = options.join('');
+  continentFilterEl.onchange = event => {
+    selectedContinent = event.target.value || '';
+    render().catch(error => console.error(error));
+  };
 }
 
 async function init() {
@@ -41,7 +66,12 @@ async function init() {
   }
 
   try {
-    data = await loadCountryClassificationData();
+    const loadedData = await loadCountryClassificationData();
+    data = {
+      ...loadedData,
+      countryList: addCountryContinents(loadedData.countryList),
+    };
+    populateContinentFilter();
     loadingEl.classList.add('hidden');
     errorEl.classList.add('hidden');
     appEl.classList.remove('hidden');
@@ -55,6 +85,7 @@ async function init() {
     retryBtn.onclick = () => {
       errorEl.classList.add('hidden');
       loadingEl.classList.remove('hidden');
+      selectedContinent = '';
       init().catch(error => {
         console.error(error);
         showError(error);
