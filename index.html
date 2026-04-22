@@ -32,21 +32,56 @@
         </header>
 
         <section class="map-card">
-          <div class="map-card-header">
-            <div>
-              <h2>Global Overview</h2>
-              <p>Each country is colored by its <code>Final Classification</code>.</p>
-            </div>
-            <div class="map-controls">
-              <label class="filter-field" for="continent-filter">
-                <span>Continent</span>
-                <select id="continent-filter" name="continent-filter">
-                  <option value="">All continents</option>
-                </select>
-              </label>
+          <div class="map-layout">
+            <aside class="filter-panel">
+              <div class="filter-panel-header">
+                <h2>Filters</h2>
+                <p>Refine the map by continent, IMO membership, and MARPOL Annex VI status.</p>
+              </div>
+
+              <div class="filter-stack">
+                <div class="filter-field filter-field--multi">
+                  <span>Continents</span>
+                  <details class="filter-dropdown">
+                    <summary>
+                      <span id="continent-filter-label">All continents</span>
+                      <span class="filter-caret" aria-hidden="true"></span>
+                    </summary>
+                    <div class="filter-dropdown-panel">
+                      <div class="filter-dropdown-actions">
+                        <button type="button" id="continent-select-all" class="filter-action">Select all</button>
+                        <button type="button" id="continent-clear" class="filter-action">Clear</button>
+                      </div>
+                      <div id="continent-filter-options" class="filter-checklist"></div>
+                    </div>
+                  </details>
+                </div>
+
+                <label class="filter-field" for="imo-filter">
+                  <span>IMO Status</span>
+                  <select id="imo-filter" name="imo-filter"></select>
+                </label>
+
+                <label class="filter-field" for="marpol-filter">
+                  <span>MARPOL Annex VI</span>
+                  <select id="marpol-filter" name="marpol-filter"></select>
+                </label>
+
+                <button id="reset-filters-btn" class="filter-reset" type="button">Reset filters</button>
+              </div>
+            </aside>
+
+            <div class="map-content">
+              <div class="map-card-header">
+                <div>
+                  <h2>Global Overview</h2>
+                  <p>Each country is colored by its <code>Final Classification</code>.</p>
+                </div>
+                <p id="filter-summary" class="map-summary">198 countries shown</p>
+              </div>
+              <div id="chart-world-map" class="map-canvas"></div>
             </div>
           </div>
-          <div id="chart-world-map" class="map-canvas"></div>
         </section>
       </section>
     </main>

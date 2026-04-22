@@ -7,6 +7,18 @@ export const CONTINENT_ORDER = [
   'South America',
 ];
 
+export const IMO_MEMBER_FILTER_OPTIONS = [
+  { value: 'all', label: 'All countries' },
+  { value: 'Member', label: 'IMO member states' },
+  { value: 'Non-member', label: 'Non-member states' },
+];
+
+export const MARPOL_FILTER_OPTIONS = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'Ratified', label: 'MARPOL ratified' },
+  { value: 'Not ratified', label: 'MARPOL not ratified' },
+];
+
 const ISO3_CONTINENT_OVERRIDES = {
   ARM: 'Asia',
   AUS: 'Oceania',
@@ -62,6 +74,24 @@ export function addCountryContinents(countryList) {
     ...country,
     continent: getCountryContinent(country),
   }));
+}
+
+export function enrichCountryList(countryList, imoMembers = []) {
+  const imoByIso3 = new Map(imoMembers.map(country => [country.iso3, country]));
+
+  return countryList.map(country => {
+    const imoRecord = imoByIso3.get(country.iso3);
+
+    return {
+      ...country,
+      continent: getCountryContinent(country),
+      imoMember: imoRecord?.imoMember ?? null,
+      imoMemberRaw: imoRecord?.imoMemberRaw || '',
+      imoMemberGroup: imoRecord?.imoMemberGroup || null,
+      marpolAnnexVI: imoRecord?.marpolAnnexVI || '',
+      marpolGroup: imoRecord?.marpolGroup || null,
+    };
+  });
 }
 
 export function getAvailableContinents(countryList) {
