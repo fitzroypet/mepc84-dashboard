@@ -165,8 +165,42 @@ body {
   font-size: 0.95rem;
 }
 
-.map-controls {
-  margin-left: auto;
+.map-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.map-content {
+  min-width: 0;
+}
+
+.filter-panel {
+  padding: 18px;
+  border: 1px solid rgba(166, 186, 208, 0.14);
+  border-radius: 18px;
+  background: rgba(8, 18, 29, 0.76);
+}
+
+.filter-panel-header {
+  margin-bottom: 16px;
+}
+
+.filter-panel-header h2 {
+  font-size: 1rem;
+  margin-bottom: 6px;
+}
+
+.filter-panel-header p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.filter-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .filter-field {
@@ -182,6 +216,10 @@ body {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
+}
+
+.filter-field--multi {
+  gap: 8px;
 }
 
 .filter-field select {
@@ -200,6 +238,96 @@ body {
 .filter-field select:focus {
   border-color: rgba(110, 231, 183, 0.65);
   box-shadow: 0 0 0 3px rgba(110, 231, 183, 0.12);
+}
+
+.filter-dropdown {
+  width: 100%;
+}
+
+.filter-dropdown summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(8, 17, 26, 0.88);
+  color: var(--text);
+  padding: 11px 14px;
+  cursor: pointer;
+}
+
+.filter-dropdown summary::-webkit-details-marker {
+  display: none;
+}
+
+.filter-dropdown[open] summary {
+  border-color: rgba(110, 231, 183, 0.4);
+}
+
+.filter-caret::before {
+  content: '▾';
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.filter-dropdown-panel {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid rgba(166, 186, 208, 0.12);
+  border-radius: 14px;
+  background: rgba(7, 15, 24, 0.92);
+}
+
+.filter-dropdown-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.filter-action,
+.filter-reset {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 9px 14px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.filter-action {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.filter-reset {
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+.filter-reset:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.filter-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.filter-check input {
+  accent-color: var(--accent);
 }
 
 .map-card code {
@@ -266,19 +394,48 @@ body {
 
 .legend-item {
   display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 180px;
-  color: var(--text-muted);
-  font-size: 13px;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 210px;
+  padding: 10px 12px;
+  border: 1px solid rgba(166, 186, 208, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .legend-swatch {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 3px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.legend-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.legend-copy strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.legend-meta {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.map-summary {
+  padding: 10px 14px;
+  border: 1px solid rgba(166, 186, 208, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .map-note,
@@ -329,13 +486,12 @@ body {
     padding: 18px;
   }
 
-  .map-card-header {
-    flex-direction: column;
+  .map-layout {
+    grid-template-columns: 1fr;
   }
 
-  .map-controls {
-    width: 100%;
-    margin-left: 0;
+  .map-card-header {
+    flex-direction: column;
   }
 
   .filter-field {
@@ -381,6 +537,11 @@ body.embed-page {
   border-radius: 16px;
 }
 
+.embed-page .map-layout {
+  grid-template-columns: minmax(220px, 250px) minmax(0, 1fr);
+  gap: 16px;
+}
+
 .embed-page .map-canvas {
   min-height: 320px;
 }
@@ -392,6 +553,10 @@ body.embed-page {
 
   .map-card {
     padding: 16px;
+  }
+
+  .embed-page .map-layout {
+    grid-template-columns: 1fr;
   }
 
   .map-card-header {

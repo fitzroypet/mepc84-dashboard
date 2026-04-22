@@ -65,10 +65,22 @@ function showCountryTooltip(event, country, fallbackName) {
   showTooltip(event, getTooltipHtml(countryName, classification));
 }
 
-function buildLegend(container, countryList, markerCount, continent) {
-  const counts = d3.rollup(countryList, values => values.length, d => d.finalClassification);
-  const filterMessage = continent
-    ? `Showing ${continent}. Countries outside the selected continent are muted. `
+function formatPercentage(count, total) {
+  if (!total) return '0%';
+  return `${((count / total) * 100).toFixed(1).replace(/\.0$/, '')}%`;
+}
+
+function formatCountryCount(count) {
+  return `${count} ${count === 1 ? 'country' : 'countries'}`;
+}
+
+function buildLegend(container, activeCountryList, markerCount, totalCountryCount) {
+  const counts = d3.rollup(activeCountryList, values => values.length, d => d.finalClassification);
+  const activeCountryCount = activeCountryList.length;
+  const filterMessage = activeCountryCount !== totalCountryCount
+    ? activeCountryCount === 0
+      ? 'No countries match the current filters. '
+      : `Showing ${activeCountryCount} of ${totalCountryCount} countries after filters. `
     : '';
 
   const legend = d3.select(container)
@@ -76,11 +88,17 @@ function buildLegend(container, countryList, markerCount, continent) {
     .attr('class', 'legend map-legend');
 
   CLASSIFICATION_ORDER.forEach(classification => {
+    const count = counts.get(classification) || 0;
     const item = legend.append('div').attr('class', 'legend-item');
     item.append('div')
       .attr('class', 'legend-swatch')
       .style('background', getClassificationColor(classification));
-    item.append('span').text(`${classification} (${counts.get(classification) || 0})`);
+
+    const copy = item.append('div').attr('class', 'legend-copy');
+    copy.append('strong').text(classification);
+    copy.append('span')
+      .attr('class', 'legend-meta')
+      .text(`${formatCountryCount(count)} · ${formatPercentage(count, activeCountryCount)}`);
   });
 
   d3.select(container)
@@ -132,10 +150,15 @@ export async function renderWorldMap(container, countryList, options = {}) {
 
   el.innerHTML = '';
 
-  const activeContinent = options.continent || null;
-  const activeCountryList = activeContinent
-    ? countryList.filter(country => country.continent === activeContinent)
-    : countryList;
+  const activeContinents = new Set(options.continents || []);
+  const imoMemberFilter = options.imoMember || 'all';
+  const marpolFilter = options.marpol || 'all';
+  const activeCountryList = countryList.filter(country => {
+    const matchesContinent = activeContinents.size === 0 || activeContinents.has(country.continent);
+    const matchesImoMember = imoMemberFilter === 'all' || country.imoMemberGroup === imoMemberFilter;
+    const matchesMarpol = marpolFilter === 'all' || country.marpolGroup === marpolFilter;
+    return matchesContinent && matchesImoMember && matchesMarpol;
+  });
   const width = Math.max(el.clientWidth || 960, 320);
   const height = Math.max(Math.round(width * 0.56), 360);
   const countryByIso3 = new Map(countryList.map(country => [country.iso3, country]));
@@ -255,5 +278,11 @@ export async function renderWorldMap(container, countryList, options = {}) {
     .attr('r', markerRadius)
     .attr('fill', d => getClassificationColor(d.finalClassification));
 
-  buildLegend(el, activeCountryList, markerCountries.length, activeContinent);
+  buildLegend(el, activeCountryList, markerCountries.length, countryList.length);
+
+  return {
+    activeCountryCount: activeCountryList.length,
+    totalCountryCount: countryList.length,
+    markerCount: markerCountries.length,
+  };
 }
