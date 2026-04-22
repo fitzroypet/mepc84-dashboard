@@ -3,135 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MEPC 84 Dashboard (Embed)</title>
+  <title>World Classification Map (Embed)</title>
   <link rel="stylesheet" href="css/dashboard.css" />
-  <style>
-    /* Compact overrides for iframe context */
-    body { overflow: hidden; }
-    #app { height: 100vh; }
-    .app-body { grid-template-columns: 1fr; }
-    .sidebar {
-      flex-direction: row;
-      flex-wrap: wrap;
-      border-right: none;
-      border-bottom: 1px solid var(--border);
-      padding: 8px 16px;
-      gap: 8px;
-    }
-    .filter-group { min-width: 120px; flex: 1; }
-    .content { padding: 12px; gap: 16px; }
-    .chart-card { padding: 12px; }
-    .dashboard-section { gap: 10px; }
-    /* Two columns always on embed */
-    @media (min-width: 600px) {
-      .chart-row:has(.half + .half) { grid-template-columns: 1fr 1fr; }
-      .chart-row:has(.quarter + .three-quarter) { grid-template-columns: 1fr 2fr; }
-    }
-  </style>
 </head>
-<body>
+<body class="embed-page">
   <div id="loading-screen">
     <div class="loader-ring"></div>
-    <p>Loading data…</p>
+    <p>Loading map…</p>
   </div>
 
   <div id="error-screen" class="hidden">
     <div class="error-card">
-      <h3>Could not load data</h3>
+      <h3>Could not load the map</h3>
       <p id="error-message"></p>
       <button id="retry-btn">Retry</button>
     </div>
   </div>
 
   <div id="app" class="hidden">
-    <div class="app-body">
-      <!-- Compact top filter bar (replaces sidebar) -->
-      <aside class="sidebar">
-        <div class="filter-group">
-          <label for="filter-agenda">Agenda</label>
-          <select id="filter-agenda"><option value="">All</option></select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-dev">Dev. Group</label>
-          <select id="filter-dev">
-            <option value="">All</option>
-            <option value="Developed">Developed</option>
-            <option value="Developing (Other)">Developing</option>
-            <option value="LDC only">LDC</option>
-            <option value="SIDS only">SIDS</option>
-            <option value="SIDS + LDC (Dual Status)">SIDS + LDC</option>
-            <option value="Economy in Transition">Transition</option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-sentiment">Sentiment</label>
-          <select id="filter-sentiment">
-            <option value="">All</option>
-            <option value="Favourable">Favourable</option>
-            <option value="Neutral">Neutral</option>
-            <option value="Problematic">Problematic</option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-stance">Stance</label>
-          <select id="filter-stance">
-            <option value="">All</option>
-            <option value="Strengthen">Strengthen</option>
-            <option value="Weaken">Weaken</option>
-            <option value="Technical">Technical</option>
-            <option value="Admin">Admin</option>
-            <option value="Adopt">Adopt</option>
-            <option value="Amend">Amend</option>
-            <option value="Replace">Replace</option>
-          </select>
-        </div>
-        <button id="clear-filters" class="btn-clear">Clear</button>
-        <span id="data-source-badge" class="badge" style="margin-left:auto;align-self:center"></span>
-        <span id="record-count" class="badge badge-count" style="align-self:center"></span>
-      </aside>
+    <main class="map-page">
+      <section class="map-shell">
+        <header class="map-header">
+          <p class="map-eyebrow">Country Classification</p>
+          <h1>World Classification Map</h1>
+          <p class="map-description">
+            A compact embedded view of the same classification map.
+          </p>
+        </header>
 
-      <main class="content">
-        <section class="dashboard-section">
-          <div class="chart-row">
-            <div class="chart-card half">
-              <div class="card-header">
-                <span class="card-title">Stance Distribution</span>
-                <span class="card-hint">Click to filter</span>
-              </div>
-              <div id="chart-stance-pie"></div>
-            </div>
-            <div class="chart-card half">
-              <div class="card-header">
-                <span class="card-title">Sentiment by Agenda Item</span>
-              </div>
-              <div id="chart-sentiment-bar"></div>
+        <section class="map-card">
+          <div class="map-card-header">
+            <div>
+              <h2>Global Overview</h2>
+              <p>Each country is colored by its <code>Final Classification</code>.</p>
             </div>
           </div>
+          <div id="chart-world-map" class="map-canvas"></div>
         </section>
-
-        <section class="dashboard-section">
-          <div class="chart-row">
-            <div class="chart-card quarter">
-              <div class="card-header">
-                <span class="card-title">Dev. Status</span>
-              </div>
-              <div id="chart-dev-donut"></div>
-            </div>
-            <div class="chart-card three-quarter">
-              <div class="card-header">
-                <span class="card-title">World Map</span>
-                <span class="card-hint">Pan &amp; zoom</span>
-              </div>
-              <div id="chart-world-map"></div>
-            </div>
-          </div>
-        </section>
-      </main>
-    </div>
+      </section>
+    </main>
   </div>
 
   <div id="tooltip" class="tooltip hidden"></div>
-  <div id="setup-overlay" class="hidden"></div>
 
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
